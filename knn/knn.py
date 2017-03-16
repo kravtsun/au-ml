@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import numpy as np
 from functools import partial
-from collections import Counter
-
+# from collections import Counter
+import argparse
 
 def read_csv(filename):
     m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
@@ -12,7 +12,15 @@ def euclidean(a, b):
     # assert (a.shape[0] == b.shape[0])
     return np.linalg.norm(a - b)
 
-def knn(data, k):
+def knn_filter_distance_by_number(distances, k):
+    return distances.argsort()[1:k+1]
+
+def knn_filter_distance_by_radius(distances, r):
+    assert r > 0
+    close_distances = distances[distances < r]
+    return close_distances.argsort()
+
+def knn(data, knn_filter):
     features = data[:, :-1]
     answers = data[:, -1].astype(int).flatten()
     nsamples = data.shape[0]
@@ -28,7 +36,7 @@ def knn(data, k):
         assert distances.shape == (nsamples,)
 
         # can be bad when several points are one. but we can exclude this cases manually.
-        best_knn_indexes = distances.argsort()[1:k+1]
+        best_knn_indexes = knn_filter(distances)
         best_knn_answers = answers[best_knn_indexes]
 
         # requires integer labels starting from 0. to be replaced with np.unique otherwise.
@@ -39,9 +47,18 @@ def knn(data, k):
     return float(sum(b)) / nsamples
 
 if __name__ == '__main__':
-    import sys
-    filename = sys.argv[1]
-    k = int(sys.argv[2])
-    data = read_csv(filename)
-    print(knn(data, k))
+    parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
+    parser.add_argument("-f", dest="filename", required=True)
+    knn_param_group = parser.add_mutually_exclusive_group(required=True)
+    knn_param_group.add_argument("-k", type=int, dest="k")
+    knn_param_group.add_argument("-r", type=float, dest="r")
+    args = parser.parse_args()
 
+    knn_filter = None
+    if args.k:
+        knn_filter = partial(knn_filter_distance_by_number, k=args.k)
+    else:
+        knn_filter = partial(knn_filter_distance_by_radius, r=args.r)
+
+    data = read_csv(args.filename)
+    print(knn(data, knn_filter))
