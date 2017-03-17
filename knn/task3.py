@@ -52,9 +52,11 @@ if __name__ == '__main__':
     csv_data = knn.read_csv(args.filename)
     if args.normalize:
         knn.normalize_data(csv_data)
+    distances = knn.precalc_data(csv_data)
+    assert distances.shape == (csv_data.shape[0], csv_data.shape[0])
 
     def func(radius):
-        loo = knn.main(["-r", str(radius)], data=csv_data)
+        loo = knn.main(["-r", str(radius)], data=csv_data, distances=distances)
         return loo
 
     l, r = find_limit_radii(csv_data)

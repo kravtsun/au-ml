@@ -15,7 +15,6 @@ if __name__ == '__main__':
     if args.normalize:
         knn.normalize_data(data)
 
+    distances = knn.precalc_data(data)
     for r in range(args.l, args.r+1):
-        print(knn.main(["-k", str(r)], data=data))
-
-
+        print(knn.main(["-k", str(r)], data, distances))
