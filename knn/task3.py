@@ -4,19 +4,21 @@ from functools import partial
 import numpy as np
 import argparse
 
+
 def calculate_distances(data):
     features = data[:, :-1]
+
     def func(row):
         row_distances = knn.calc_distances_to_feature_vector(features, row)
-        return (np.partition(row_distances, 1)[1], max(row_distances))
+        return np.partition(row_distances, 1)[1], max(row_distances)
     pair_distances = np.apply_along_axis(func, axis=1, arr=features)
     return pair_distances
 
+
 def find_limit_radii(data):
     distances = calculate_distances(data)
-    l = np.percentile(distances[:, 0], 95)
-    r = max(distances[:, 1])
-    return l, r
+    return np.percentile(distances[:, 0], 95), max(distances[:, 1])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
@@ -27,17 +29,17 @@ if __name__ == '__main__':
     parser.add_argument("-q", "--quiet", dest="quiet", action="store_true", default=False)
     args = parser.parse_args()
 
-    data = knn.read_csv(args.filename)
+    csv_data = knn.read_csv(args.filename)
     if args.normalize:
-        knn.normalize_data(data)
-    knn_run = partial(knn.knn, data=data)
+        knn.normalize_data(csv_data)
+    knn_run = partial(knn.knn, data=csv_data)
 
     def func(radius):
         knn_filter = partial(knn.knn_filter_distance_by_radius, r=radius)
         loo = knn_run(knn_filter=knn_filter)
         return loo
 
-    l, r = find_limit_radii(data)
+    l, r = find_limit_radii(csv_data)
     if args.l is not None:
         l = args.l
     if args.r is not None:

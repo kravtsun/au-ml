@@ -6,7 +6,7 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     v = np.loadtxt(filename)
     print(v)
-    loo = v[:,1]
-    kk = v[:,0]
+    loo = v[:, 1]
+    kk = v[:, 0]
     plt.plot(kk, loo)
     plt.show()

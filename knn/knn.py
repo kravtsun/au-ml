@@ -4,26 +4,32 @@ from functools import partial
 from collections import Counter
 import argparse
 
+
 def read_csv(filename):
     m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
-    return m;
+    return m
+
 
 def euclidean(a, b):
     # assert (a.shape[0] == b.shape[0])
     return np.linalg.norm(a - b)
 
+
 def knn_filter_distance_by_number(distances, k):
     return distances.argsort()[:k+1]
+
 
 def knn_filter_distance_by_radius(distances, r):
     assert r > 0
     return np.where(distances < r)
+
 
 def calc_distances_to_feature_vector(features, row):
     # distances = np.apply_along_axis(euclidean, 1, features, b=cur_feature)
     # calculate euclidian distances between samples and current feature vector.
     distances = np.sqrt(np.sum((features - row) ** 2, axis=1))
     return distances
+
 
 def knn(data, knn_filter):
     features = data[:, :-1]
@@ -34,7 +40,7 @@ def knn(data, knn_filter):
     assert nfeatures + 1 == data.shape[1]
 
     def test_sample(data_row):
-        row_features = data_row[:-1] # alias
+        row_features = data_row[:-1]  # alias
         row_label = data_row[-1]
         distances = calc_distances_to_feature_vector(features, row_features)
         assert distances.shape == (nsamples,)
@@ -56,6 +62,7 @@ def knn(data, knn_filter):
     b = np.not_equal(assumed_labels, answers)
     return float(sum(b)) / nsamples
 
+
 def normalize_data(data):
     features = data[:, :-1]
     max_features = np.max(features, axis=0)
@@ -64,6 +71,7 @@ def normalize_data(data):
     assert max_features.shape == (nfeatures,)
     features /= max_features
     assert np.max(features) <= 1.0
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
