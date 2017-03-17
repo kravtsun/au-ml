@@ -20,6 +20,26 @@ def find_limit_radii(data):
     return np.percentile(distances[:, 0], 95), max(distances[:, 1])
 
 
+def ternary_search(func, l, r, quiet=False):
+    def best_of_two(l, r):
+        return (l + r) / 2.
+    EPS = 1e-1
+    while r - l > EPS:
+        m1 = l + (r - l) / 3.
+        m2 = r - (r - l) / 3.
+
+        if func(m1) < func(m2):
+            r = m2
+        else:
+            l = m1
+        if not quiet:
+            print(l, r, func(best_of_two(l, r)))
+
+    best_x = best_of_two(l, r)
+    best_y = func(best_x)
+    return best_x, best_y
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
     parser.add_argument("-f", dest="filename", required=True, help="CSV file.")
@@ -32,11 +52,9 @@ if __name__ == '__main__':
     csv_data = knn.read_csv(args.filename)
     if args.normalize:
         knn.normalize_data(csv_data)
-    knn_run = partial(knn.knn, data=csv_data)
 
     def func(radius):
-        knn_filter = partial(knn.knn_filter_distance_by_radius, r=radius)
-        loo = knn_run(knn_filter=knn_filter)
+        loo = knn.main(["-r", str(radius)], data=csv_data)
         return loo
 
     l, r = find_limit_radii(csv_data)
@@ -45,18 +63,5 @@ if __name__ == '__main__':
     if args.r is not None:
         r = args.r
 
-    EPS = 1e-1
-    while r - l > EPS:
-        m1 = l + (r - l) / 3.
-        m2 = r - (r - l) / 3.
-
-        if func(m1) < func(m2):
-            r = m2
-        else:
-            l = m1
-        if not args.quiet:
-            print(l, r)
-
-    best_radius = (l + r) / 2.
-    best_loo = func(best_radius)
-    print(best_loo)
+    best_radius, best_loo  = ternary_search(func, l, r, args.quiet)
+    print(best_radius, best_loo)
