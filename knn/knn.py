@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import numpy as np
 from functools import partial
-# from collections import Counter
+from collections import Counter
 import argparse
 
 def read_csv(filename):
@@ -12,13 +12,20 @@ def euclidean(a, b):
     # assert (a.shape[0] == b.shape[0])
     return np.linalg.norm(a - b)
 
+max_distance = None
+
 def knn_filter_distance_by_number(distances, k):
-    return distances.argsort()[1:k+1]
+    return distances.argsort()[:k+1]
 
 def knn_filter_distance_by_radius(distances, r):
     assert r > 0
-    close_distances = distances[distances < r]
-    return close_distances.argsort()
+    return np.where(distances < r)
+
+def calc_distances_to_feature_vector(features, row):
+    # distances = np.apply_along_axis(euclidean, 1, features, b=cur_feature)
+    # calculate euclidian distances between samples and current feature vector.
+    distances = np.sqrt(np.sum((features - row) ** 2, axis=1))
+    return distances
 
 def knn(data, knn_filter):
     features = data[:, :-1]
@@ -28,21 +35,21 @@ def knn(data, knn_filter):
     nfeatures = features.shape[1]
     assert nfeatures + 1 == data.shape[1]
 
-    def test_sample(row):
-        # distances = np.apply_along_axis(euclidean, 1, features, b=cur_feature)
-        # calculate euclidian distances between samples and current feature vector.
-        distances = np.sqrt(np.sum((features - row) ** 2, axis=1))
-
+    def test_sample(data_row):
+        row_features = data_row[:-1] # alias
+        row_label = data_row[-1]
+        distances = calc_distances_to_feature_vector(features, row_features)
         assert distances.shape == (nsamples,)
 
         # can be bad when several points are one. but we can exclude this cases manually.
         best_knn_indexes = knn_filter(distances)
         best_knn_answers = answers[best_knn_indexes]
 
-        # requires integer labels starting from 0. to be replaced with np.unique otherwise.
-        return np.bincount(best_knn_answers).argmax() # as k is relatively small, this optimization has no future.
+        counter = Counter(list(best_knn_answers))
+        counter.subtract([row_label])
+        return counter.most_common(1)[0][0]
 
-    assumed_labels = np.apply_along_axis(test_sample, 1, features)
+    assumed_labels = np.apply_along_axis(test_sample, 1, data)
     b = np.not_equal(assumed_labels, answers)
     return float(sum(b)) / nsamples
 
@@ -62,3 +69,4 @@ if __name__ == '__main__':
 
     data = read_csv(args.filename)
     print(knn(data, knn_filter))
+    print(max_distance)
