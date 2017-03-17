@@ -22,7 +22,7 @@ def find_limit_radii(data):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
-    parser.add_argument("-f", dest="filename", required=True)
+    parser.add_argument("-f", dest="filename", required=True, help="CSV file.")
     parser.add_argument("-l", dest="l", type=float, default=None)
     parser.add_argument("-r", dest="r", type=float, default=None)
     parser.add_argument("-n", "--normalize", dest="normalize", action="store_true", default=False)

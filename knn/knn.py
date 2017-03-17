@@ -10,21 +10,20 @@ def read_csv(filename):
     return m
 
 
-def euclidean(a, b):
-    # assert (a.shape[0] == b.shape[0])
-    return np.linalg.norm(a - b)
-
-
 def knn_filter_distance_by_number(distances, k):
     return distances.argsort()[:k+1]
 
 
 def knn_filter_distance_by_radius(distances, r):
     assert r > 0
-    return np.where(distances < r)
+    res = np.where(distances < r)
+    return res
 
 
 def calc_distances_to_feature_vector(features, row):
+    # def euclidean(a, b):
+    #     # assert (a.shape[0] == b.shape[0])
+    #     return np.linalg.norm(a - b)
     # distances = np.apply_along_axis(euclidean, 1, features, b=cur_feature)
     # calculate euclidian distances between samples and current feature vector.
     distances = np.sqrt(np.sum((features - row) ** 2, axis=1))
@@ -66,21 +65,23 @@ def knn(data, knn_filter):
 def normalize_data(data):
     features = data[:, :-1]
     max_features = np.max(features, axis=0)
-
     nfeatures = data.shape[1] - 1
     assert max_features.shape == (nfeatures,)
     features /= max_features
     assert np.max(features) <= 1.0
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
-    parser.add_argument("-f", dest="filename", required=True)
-    knn_param_group = parser.add_mutually_exclusive_group(required=True)
-    knn_param_group.add_argument("-k", type=int, dest="k")
-    knn_param_group.add_argument("-r", type=float, dest="r")
-    parser.add_argument("-n", "--normalize", dest="normalize", action="store_true", default=False)
-    args = parser.parse_args()
+def main(argv, data=None):
+    def create_args_parser():
+        parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
+        parser.add_argument("-f", dest="filename", required=data is None)
+        knn_param_group = parser.add_mutually_exclusive_group(required=True)
+        knn_param_group.add_argument("-k", type=int, dest="k")
+        knn_param_group.add_argument("-r", type=float, dest="r")
+        parser.add_argument("-n", "--normalize", dest="normalize", action="store_true", default=False)
+        return parser
+    parser = create_args_parser()
+    args = parser.parse_args(argv)
 
     knn_filter = None
     if args.k:
@@ -88,8 +89,14 @@ if __name__ == '__main__':
     else:
         knn_filter = partial(knn_filter_distance_by_radius, r=args.r)
 
-    data = read_csv(args.filename)
+    if data is None:
+        data = read_csv(args.filename)
+
     if args.normalize:
         normalize_data(data)
+    return knn(data, knn_filter)
 
-    print(knn(data, knn_filter))
+
+if __name__ == '__main__':
+    import sys
+    print(main(sys.argv))
