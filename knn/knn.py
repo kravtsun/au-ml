@@ -47,7 +47,12 @@ def knn(data, knn_filter):
 
         counter = Counter(list(best_knn_answers))
         counter.subtract([row_label])
-        return counter.most_common(1)[0][0]
+        most_common = counter.most_common(1)
+        if len(most_common) == 0 or most_common[0][1] < 0:
+            # can't classify: no elements in the neighborhood.
+            return -1
+        else:
+            return most_common[0][0]
 
     assumed_labels = np.apply_along_axis(test_sample, 1, data)
     b = np.not_equal(assumed_labels, answers)
