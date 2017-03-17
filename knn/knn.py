@@ -12,8 +12,6 @@ def euclidean(a, b):
     # assert (a.shape[0] == b.shape[0])
     return np.linalg.norm(a - b)
 
-max_distance = None
-
 def knn_filter_distance_by_number(distances, k):
     return distances.argsort()[:k+1]
 
@@ -58,12 +56,22 @@ def knn(data, knn_filter):
     b = np.not_equal(assumed_labels, answers)
     return float(sum(b)) / nsamples
 
+def normalize_data(data):
+    features = data[:, :-1]
+    max_features = np.max(features, axis=0)
+
+    nfeatures = data.shape[1] - 1
+    assert max_features.shape == (nfeatures,)
+    features /= max_features
+    assert np.max(features) <= 1.0
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
     parser.add_argument("-f", dest="filename", required=True)
     knn_param_group = parser.add_mutually_exclusive_group(required=True)
     knn_param_group.add_argument("-k", type=int, dest="k")
     knn_param_group.add_argument("-r", type=float, dest="r")
+    parser.add_argument("-n", "--normalize", dest="normalize", action="store_true", default=False)
     args = parser.parse_args()
 
     knn_filter = None
@@ -73,5 +81,7 @@ if __name__ == '__main__':
         knn_filter = partial(knn_filter_distance_by_radius, r=args.r)
 
     data = read_csv(args.filename)
+    if args.normalize:
+        normalize_data(data)
+
     print(knn(data, knn_filter))
-    print(max_distance)

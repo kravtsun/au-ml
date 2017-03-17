@@ -1,9 +1,8 @@
 #!/usr/bin/python3
-import sys
 import knn
 from functools import partial
 import numpy as np
-import matplotlib.pyplot as plt
+import argparse
 
 def calculate_distances(data):
     features = data[:, :-1]
@@ -20,18 +19,30 @@ def find_limit_radii(data):
     return l, r
 
 if __name__ == '__main__':
-    data = knn.read_csv(sys.argv[1])
+    parser = argparse.ArgumentParser(description="run KNN classifier with given arguments")
+    parser.add_argument("-f", dest="filename", required=True)
+    parser.add_argument("-l", dest="l", type=float, default=None)
+    parser.add_argument("-r", dest="r", type=float, default=None)
+    parser.add_argument("-n", "--normalize", dest="normalize", action="store_true", default=False)
+    parser.add_argument("-q", "--quiet", dest="quiet", action="store_true", default=False)
+    args = parser.parse_args()
+
+    data = knn.read_csv(args.filename)
+    if args.normalize:
+        knn.normalize_data(data)
     knn_run = partial(knn.knn, data=data)
-    d = {}
 
     def func(radius):
         knn_filter = partial(knn.knn_filter_distance_by_radius, r=radius)
         loo = knn_run(knn_filter=knn_filter)
-        d[radius] = loo
         return loo
 
     l, r = find_limit_radii(data)
-    # r *= 2
+    if args.l is not None:
+        l = args.l
+    if args.r is not None:
+        r = args.r
+
     EPS = 1e-1
     while r - l > EPS:
         m1 = l + (r - l) / 3.
@@ -41,7 +52,9 @@ if __name__ == '__main__':
             r = m2
         else:
             l = m1
-        print(l, r, d[m1], d[m2])
+        if not args.quiet:
+            print(l, r)
 
-    print("result = ", func((l+r)/2.))
-    print(d)
+    best_radius = (l + r) / 2.
+    best_loo = func(best_radius)
+    print(best_loo)
