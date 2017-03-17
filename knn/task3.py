@@ -5,35 +5,21 @@ import numpy as np
 import argparse
 
 
-def calculate_distances(data):
-    features = data[:, :-1]
-
-    def func(row):
-        row_distances = knn.calc_distances_to_feature_vector(features, row)
-        return np.partition(row_distances, 1)[1], max(row_distances)
-    pair_distances = np.apply_along_axis(func, axis=1, arr=features)
-    return pair_distances
-
-
-def find_limit_radii(data):
-    distances = calculate_distances(data)
-    return np.percentile(distances[:, 0], 95), max(distances[:, 1])
-
-
 def ternary_search(func, l, r, quiet=False):
     def best_of_two(l, r):
         return (l + r) / 2.
-    EPS = 1e-1
+    EPS = 1e-3
     while r - l > EPS:
+        if not quiet:
+            print(l, r, func(best_of_two(l, r)))
         m1 = l + (r - l) / 3.
         m2 = r - (r - l) / 3.
 
-        if func(m1) < func(m2):
+        fm1, fm2 = func(m1), func(m2)
+        if fm1 < fm2 + EPS:
             r = m2
         else:
             l = m1
-        if not quiet:
-            print(l, r, func(best_of_two(l, r)))
 
     best_x = best_of_two(l, r)
     best_y = func(best_x)
@@ -59,11 +45,11 @@ if __name__ == '__main__':
         loo = knn.main(["-r", str(radius)], data=csv_data, distances=distances)
         return loo
 
-    l, r = find_limit_radii(csv_data)
+    l, r = 0, np.max(distances)
     if args.l is not None:
         l = args.l
     if args.r is not None:
         r = args.r
 
-    best_radius, best_loo  = ternary_search(func, l, r, args.quiet)
+    best_radius, best_loo = ternary_search(func, l, r, args.quiet)
     print(best_radius, best_loo)

@@ -15,8 +15,7 @@ def knn_filter_distance_by_number(distances, k):
 
 
 def knn_filter_distance_by_radius(distances, r):
-    assert r > 0
-    res = np.where(distances < r)
+    res = np.where(distances <= r)
     return res
 
 
@@ -40,30 +39,31 @@ def precalc_data(data):
 
 def knn(data, knn_filter, distances):
     features = get_features(data)
-    answers = data[:, -1].astype(int).flatten()
+    answers = data[:, -1]
     nsamples = data.shape[0]
     assert nsamples == answers.shape[0]
     nfeatures = features.shape[1]
     assert nfeatures + 1 == data.shape[1]
     assert distances.shape == (nsamples, nsamples)
 
-    def test_sample(data_row, row_distances):
-        assert data_row.shape == (nfeatures + 1, )
+    most_common_label = Counter(answers).most_common(1)[0][0]
+
+    def test_sample(row_data, row_distances):
+        assert row_data.shape == (nfeatures + 1,)
         assert row_distances.shape == (nsamples, )
-        row_label = data_row[-1]
+        row_label = row_data[-1]
         best_knn_indexes = knn_filter(row_distances)
         best_knn_answers = answers[best_knn_indexes]
 
         counter = Counter(list(best_knn_answers))
         counter.subtract([row_label])
         most_common = counter.most_common(1)
-        if len(most_common) == 0 or most_common[0][1] < 0:
+        if len(most_common) == 0 or most_common[0][1] == 0:
             # can't classify: no elements in the neighborhood.
-            return -1
+            return most_common_label
         else:
             return most_common[0][0]
-
-    assumed_labels = np.array([ test_sample(data_row, row_distances) for data_row, row_distances in zip(data, distances) ])
+    assumed_labels = np.array([ test_sample(row_data, row_distances) for row_data, row_distances in zip(data, distances) ])
     assert assumed_labels.shape == (nsamples,)
     b = np.not_equal(assumed_labels, answers)
     return float(sum(b)) / nsamples
