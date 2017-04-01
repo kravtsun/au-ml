@@ -6,16 +6,6 @@ from common import read_csv, plot_clusters, distance, print_cluster_distribution
 def similarity(p1, p2):
     return -distance(p1, p2, axis=1)
 
-def sklearn_affinity_propagation(data, pref=None, damping=0.80):
-    from sklearn.cluster import AffinityPropagation
-
-    af = AffinityPropagation(preference=pref, damping=damping, verbose=True).fit(data)
-    cluster_centers_indices = af.cluster_centers_indices_
-    labels = af.labels_
-    n_clusters_ = len(cluster_centers_indices)
-    print pref, n_clusters_
-    return labels
-
 def affinity_propagation(data, pref=None, w=0.5, iterations=300, EPS=1e-3):
     n = data.shape[0]
     s = np.apply_along_axis(lambda p: similarity(p, data), 1, data)
@@ -30,7 +20,6 @@ def affinity_propagation(data, pref=None, w=0.5, iterations=300, EPS=1e-3):
     r = np.zeros((n, n))
     a = np.ma.masked_array(np.zeros((n, n)), mask=False)
     it = 0
-    ra = np.diag(r) + np.diag(a)
     rpositive = np.ma.zeros(shape=(n,n))
     rpositive.mask = False
     natural_index = np.arange(n)
@@ -68,12 +57,8 @@ if __name__ == '__main__':
     parser.add_argument("-f", dest="filename", type=str, required=True)
     parser.add_argument("-p", "--pref", dest="pref", type=int, required=False, default=None)
     parser.add_argument("-w", dest="weight", type=float, required=False, default=0.75)
-    parser.add_argument("--sklearn", dest="sklearn", action="store_true", default=False)
     args = parser.parse_args()
     data = read_csv(args.filename)
-    if args.sklearn:
-        labels = sklearn_affinity_propagation(data, args.pref, args.weight)
-    else:
-        labels = affinity_propagation(data, pref=args.pref, w=args.weight)
+    labels = affinity_propagation(data, pref=args.pref, w=args.weight)
     plot_clusters(data, labels)
     print_cluster_distribution(labels)
