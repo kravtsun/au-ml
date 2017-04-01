@@ -1,15 +1,7 @@
 #!/bin/python
-import sys
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
-
-def read_csv(filename):
-    m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
-    return m
-
-def distance(p1, p2):
-    return np.sqrt(np.sum((p1 - p2) ** 2))
+from common import read_csv, plot_clusters, distance, print_cluster_distribution
 
 def kmeans_chosen(data, centers):
     def best_cluster(p):
@@ -58,13 +50,6 @@ def sklearn_bruteforce(data, clusters):
             if len(set(result)) == clusters+1:
                 print m, eps, np.count_nonzero(result == 0), np.count_nonzero(result == -1)
 
-def print_cluster_distribution(result):
-    clusters = len(set(result)) - (-1 in result)
-    print clusters, ":"
-    for c in range(clusters):
-        print c, np.count_nonzero(result == c)
-    print -1, np.count_nonzero(result == -1)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run k-means clusterization with given arguments")
     parser.add_argument("-f", dest="filename", type=str, required=True)
@@ -75,19 +60,8 @@ if __name__ == '__main__':
     data = read_csv(args.filename)
 
     result = dbscan(data, args.eps, args.m)
-    clusters = len(set(result)) - (-1 in result)
     print_cluster_distribution(result)
-
-    if clusters == 4:
-        def plot_points(points, color='k'):
-            plt.plot(points[:, 0], points[:, 1], color + 'o', markersize=10)
-
-        colors = ['r', 'g', 'b', 'y', 'k']
-        for i in range(clusters):
-            cluster_points = data[result == i]
-            plot_points(data[result==i], colors[i])
-        plot_points(data[result == -1])
-        plt.show()
+    plot_clusters(data, result)
 
 
 
