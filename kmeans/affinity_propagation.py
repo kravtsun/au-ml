@@ -6,7 +6,7 @@ from common import read_csv, plot_clusters, distance, print_cluster_distribution
 def similarity(p1, p2):
     return -distance(p1, p2, axis=1)
 
-def affinity_propagation(data, pref=None, w=0.5, iterations=300, EPS=1e-3):
+def affinity_propagation(data, pref=None, w=0.5, iterations=300, EPS=1e-3, verbose=True):
     n = data.shape[0]
     s = np.apply_along_axis(lambda p: similarity(p, data), 1, data)
     s = np.ma.masked_array(s, mask=False)
@@ -42,10 +42,12 @@ def affinity_propagation(data, pref=None, w=0.5, iterations=300, EPS=1e-3):
         a.flat[::n + 1] = np.diag(rpositive)
         a = w * olda - (1 - w) * a
         dist = distance(np.diag(olda) + np.diag(oldr), np.diag(a) + np.diag(r))
-        print "dist = ", dist
+        if verbose:
+            print "dist = ", dist
         if dist < EPS and np.sum(np.diag(a + r) > 0) > 0:
             break
-    print "it = ", it
+    if verbose:
+        print "it = ", it
     iexemplars = np.where(np.diag(a + r) > 0)[0]
     clusters = np.argmax(s[:, iexemplars], axis=1)
     clusters[iexemplars] = np.arange(n)

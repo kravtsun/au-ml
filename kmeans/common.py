@@ -3,8 +3,8 @@ from itertools import cycle
 import numpy as np
 import matplotlib.pyplot as plt
 
-def read_csv(filename):
-    m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
+def read_csv(filename, max_rows=None):
+    m = np.genfromtxt(filename, delimiter=',', dtype=float, skip_header=1, max_rows=max_rows)
     return m
 
 def distance(p1, p2, axis=None):
@@ -22,7 +22,7 @@ def plot_clusters(data, labels):
     def plot_points(points, color='k'):
         plt.plot(points[:, 0], points[:, 1], color + 'o', markersize=10)
 
-    for i, color in zip(range(clusters), cycle('rgby')):
+    for i, color in zip(range(clusters), cycle('rgbcmy')):
         cluster_points = data[labels == i]
         plot_points(data[labels == i], color)
     plot_points(data[labels == -1])
