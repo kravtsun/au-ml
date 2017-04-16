@@ -1,8 +1,10 @@
 #!/usr/bin/python
 import numpy as np
+import matplotlib.pyplot as plt
 import argparse
 from collections import Counter
-from dtree import read_csv, threshold_results, accuracy
+from dtree import read_csv, threshold_results, accuracy, plot_roc, calculate_precision_recall
+
 
 INF = 1e50
 
@@ -43,7 +45,6 @@ def gini_criteria(result, labels):
     r1, r2 = labels[indexes], labels[other_indexes]
     lenr1, lenr2 = len(r1), len(r2)
     nfloat = float(n)
-
     res = 0
     if lenr1 > 0:
         res -= impurity(r1)
@@ -56,26 +57,26 @@ def gini_criteria(result, labels):
     # nfloat = float(n)
     # return impurity(labels) - lenr1 / nfloat * impurity(r1) - lenr2 / nfloat * impurity(r2)
 
-
 class DecisionTree:
+    max_level = 0
     class Node:
-        def __init__(self, ifeature, threshold, label):
+        def __init__(self, ifeature, threshold, label, confidence):
             self.left_ = None
             self.right_ = None
             # self.indexes = indexes
             self.ifeature = ifeature
             self.threshold = threshold
             self.label = label
+            self.confidence = confidence
+            pass
 
         def predict(self, feature):
-            if self.ifeature is None:
-                return self.label
-            else:
+            if self.ifeature is not None:
                 if feature[self.ifeature] > self.threshold and self.right_ is not None:
                     return self.right_.predict(feature)
                 elif feature[self.ifeature] <= self.threshold and self.left_ is not None:
                     return self.left_.predict(feature)
-                return self.label
+            return self.label, self.confidence
 
     def __init__(self, features, labels, criteria, depth=100, verbose=False):
         assert len(labels.shape) == 1
@@ -91,23 +92,25 @@ class DecisionTree:
         if self.verbose:
             print (" " * (level * 4)) + str(msg)
 
-    def create_leaf(self, curbestlabel, level=-1):
+    def create_leaf(self, curbestlabel, level, confidence):
         self.debug("<node>", level)
-        root = DecisionTree.Node(None, None, curbestlabel)
+        root = DecisionTree.Node(None, None, curbestlabel, confidence)
         self.debug("</node>", level)
         return root
 
     def create_node(self, features, labels, indexes, level):
+        DecisionTree.max_level = max(DecisionTree.max_level, level)
         if len(indexes) < self.min_samples_leaf:
             return None
-        curfeatures = features[indexes]
-        curlabels = labels[indexes]
+        curfeatures, curlabels = features[indexes], labels[indexes]
         curbestlabel, curbestlen = Counter(curlabels).most_common(1)[0]
-        n = len(curlabels)
-        nf = curfeatures.shape[1]
-        if curbestlen == len(curlabels) or (self.max_depth is not None and level + 1 == self.max_depth):
-            return self.create_leaf(curbestlabel, level)
+        n, nf = len(curlabels), curfeatures.shape[1]
+        curconfidence = accuracy(curlabels, [1.0] * n)
+        if curbestlen == len(curlabels):
+            return self.create_leaf(curbestlabel, level, curconfidence)
 
+        if self.max_depth is not None and level + 1 == self.max_depth:
+            return self.create_leaf(curbestlabel, level, curconfidence)
         def calc_criteria(feature):
             uniq_feature, results = threshold_results(feature, curlabels, False)
             nuniq = len(uniq_feature)
@@ -118,16 +121,16 @@ class DecisionTree:
             return max(curcriteria, key=lambda p : p[-1])
         calculated_criteria = [(i,) + calc_criteria(curfeatures[:, i]) for i in range(nf)]
         ifeature, threshold, result, best_gain = max(calculated_criteria, key=lambda p: p[-1:])
-        left_indexes = np.where(result == 0)[0]
-        right_indexes = np.where(result == 1)[0]
-        # assert len(left_indexes) + len(right_indexes) == n
-        # self.debug((ifeature, threshold, (len(left_indexes), len(right_indexes))), level)
+        left_indexes, right_indexes = np.where(result == 0)[0], np.where(result == 1)[0]
+        left_len, right_len = len(left_indexes), len(right_indexes)
+        assert left_len + right_len == n
+        self.debug((ifeature, threshold, (left_len, right_len)), level)
 
         if best_gain == -np.inf:# or (self.max_depth is not None and level == self.max_depth - 1):
-            return self.create_leaf(curbestlabel, level)
+            return self.create_leaf(curbestlabel, level, curconfidence)
 
         self.debug("<node>", level)
-        root = DecisionTree.Node(ifeature, threshold, curbestlabel)
+        root = DecisionTree.Node(ifeature, threshold, curbestlabel, curconfidence)
         self.debug("<left>", level)
         root.left_ = self.create_node(curfeatures, curlabels, left_indexes, level + 1)
         self.debug("</left>", level)
@@ -156,6 +159,7 @@ if __name__ == '__main__':
     parser.add_argument("--verbose", dest="verbose", action='store_true', required=False, default=False)
     parser.add_argument("--gini", dest="gini", action='store_true', required=False, default=False)
     parser.add_argument("--best", dest="best", action='store_true', required=False, default=False)
+    parser.add_argument("--roc", dest="roc", action='store_true', required=False, default=False)
     parser.add_argument("--sklearn", dest="sklearn", action='store_true', required=False, default=False)
 
     args = parser.parse_args()
@@ -182,5 +186,18 @@ if __name__ == '__main__':
         criteria = gini_criteria if args.gini else gain_criteria
         tree = DecisionTree(features, labels, criteria, args.depth, args.verbose)
         result = np.apply_along_axis(tree.predict, 1, test_features)
+        confidence = result[:, 1]
+        result = result[:, 0]
+        if args.roc:
+            uniq_conf = set(confidence)
+            uniq_conf = uniq_conf.union(set([0.0, 1.0]))
+            print "Confidence: ", Counter(confidence)
+            tmp = np.array([calculate_precision_recall(confidence > conf, test_labels) for conf in uniq_conf])
+            # tpr_fpr = [calculate_precision_recall(confidence > conf, test_labels)[-2:] for conf in uniq_conf]
+            tpr, fpr = tmp[:, -2], tmp[:, -1]
+            # print "max_level = ", DecisionTree.max_level
+            plot_roc(fpr, tpr, marker_size=10)
+            plt.show()
+
     print args.depth, np.sum(result == test_labels) / float(len(test_labels))
 

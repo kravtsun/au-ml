@@ -24,14 +24,15 @@ def threshold_results(feature, labels, filter=True):
         unique_feature = unique_feature[not_nan_indexes]
     return unique_feature, results
 
-def calculate_precision_recall(feature, labels):
+def calculate_precision_recall(results, labels):
     n = len(labels)
-    unique_feature, results = threshold_results(feature, labels)
-    row_positives = np.sum(results, axis=1)
+    row_positives = np.sum(results, axis=-1)
+    if np.all(row_positives == 0):
+        return np.nan, 0, 0, 0
     assert np.all(row_positives > 0)
     def count_true_positives(row_result):
         return np.sum(np.logical_and(row_result, labels))
-    true_positives = np.apply_along_axis(count_true_positives, 1, results).astype(dtype=np.float)
+    true_positives = np.apply_along_axis(count_true_positives, -1, results).astype(dtype=np.float)
     true_positives = true_positives
     precision = true_positives / row_positives
     assert np.sum(np.unique(labels) - np.array([0, 1])) == 0.0
@@ -41,7 +42,7 @@ def calculate_precision_recall(feature, labels):
     tpr = true_positives / total_positives
     fpr = (row_positives - true_positives) / (n - total_positives)
 
-    return unique_feature, precision, recall, tpr, fpr
+    return precision, recall, tpr, fpr
 
 def plot_pareto(precision, recall, graph_label="Pareto"):
     assert precision.shape == recall.shape
@@ -64,11 +65,12 @@ def plot_pareto(precision, recall, graph_label="Pareto"):
     plt.plot(pp[:, 0], pp[:,1], 'or')
     # plt.show()
 
-def plot_roc(fpr, tpr):
+def plot_roc(fpr, tpr, **kwargs):
     plt.figure("ROC")
     t = np.linspace(0, 1.0, 100)
     plt.plot(t, t, 'b')
-    plt.plot(fpr, tpr, 'og')
+    asort = fpr.argsort()
+    plt.plot(fpr[asort], tpr[asort], 'og-', markersize=10)
 
 def auc(fpr, tpr):
     n = len(fpr)
@@ -89,8 +91,10 @@ if __name__ == '__main__':
     nfeatures = data.shape[1] - 1
     # k = args.k
 
+    labels = data[:, -1]
     def auc_value(k):
-        uniq_feature, precision, recall, tpr, fpr = calculate_precision_recall(data[:, -1 - k], data[:, -1])
+        unique_feature, results = threshold_results(feature=data[:, -1 - k], labels=labels)
+        precision, recall, tpr, fpr = calculate_precision_recall(results, labels)
         auc(fpr, tpr)
         # plot_pareto(precision, recall)
         # plot_roc(fpr, tpr)
@@ -104,11 +108,11 @@ if __name__ == '__main__':
     # aucs = [(feature_labels[nfeatures - i], auc_value(i)) for i in range(1, nfeatures + 1)]
     aucs = [(nfeatures - i, auc_value(i)) for i in range(1, nfeatures + 1)]
 
-    best_ten = sorted(aucs, key=lambda p: p[1])[-10:]
-    from operator import itemgetter
-    print list(map(itemgetter(0), best_ten))
-    print best_ten
+    # best_ten = sorted(aucs, key=lambda p: p[1])[-10:]
+    # from operator import itemgetter
+    # print list(map(itemgetter(0), best_ten))
+    # print best_ten
 
-    # plt.plot(aucs, 'o')
-    # plt.show()
-    # print aucs
+    plt.plot(aucs, 'o')
+    plt.show()
+    print aucs
