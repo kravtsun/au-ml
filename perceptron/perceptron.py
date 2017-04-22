@@ -17,6 +17,7 @@ def pocket_pla(features, labels, iterations=10000, EPS=1e-5):
     assert len(set(sign_labels.flatten())) == 2
     pinv = np.linalg.pinv(features)
     ein = best_ein = 1e50
+    best_cnt = 0
     w = best_w = pinv.dot(sign_labels)
     assert w.shape == (nfeatures,)
     it = 0
@@ -27,6 +28,7 @@ def pocket_pla(features, labels, iterations=10000, EPS=1e-5):
         if best_ein < EPS:
             break
         if ein < best_ein:
+            best_cnt = np.sum(diff)
             best_w, best_ein = w, ein
         print it, ein
         assert cur_labels.shape == (n,)
@@ -35,7 +37,7 @@ def pocket_pla(features, labels, iterations=10000, EPS=1e-5):
         w = w - xi * yi
         it += 1
     assert best_w.shape == (nfeatures,)
-    print "best_ein = ", best_ein
+    print "best_ein = ", best_ein, best_cnt
     return best_w.flatten()
 
 def plot_line(w, xmin, xmax, N=1000):
@@ -73,7 +75,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run k-means clusterization with given arguments")
     parser.add_argument("-f", dest="filename", type=str, required=True)
     parser.add_argument("--line", dest="line", action='store_true', required=False, default=False)
-    parser.add_argument("-p", dest="polynomials", action='store_true', required=False, default=3)
+    parser.add_argument("-p", dest="polynomials", action='store_true', required=False, default=2)
     parser.add_argument("--iter", dest="iterations", type=int, required=False, default=10000)
     args = parser.parse_args()
     data = read_csv(args.filename)
