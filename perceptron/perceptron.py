@@ -2,6 +2,7 @@
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
+from common import plot_line, plot_points, plot_square_line, prepare_regression
 
 def read_csv(filename):
     m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
@@ -12,13 +13,8 @@ def accuracy(results, labels):
 
 def pocket_pla(features, labels, iterations=10000, EPS=1e-5):
     n, nfeatures = features.shape
-    sign_labels = labels.copy()
-    sign_labels[np.where(labels == 0)] = -1
-    assert len(set(sign_labels.flatten())) == 2
-    pinv = np.linalg.pinv(features)
-    ein = best_ein = 1e50
-    best_cnt = 0
-    w = best_w = pinv.dot(sign_labels)
+    sign_labels, w = prepare_regression(features, labels)
+    best_w, best_ein = w, 1e50
     assert w.shape == (nfeatures,)
     it = 0
     while it < iterations:
@@ -39,37 +35,6 @@ def pocket_pla(features, labels, iterations=10000, EPS=1e-5):
     assert best_w.shape == (nfeatures,)
     print "best_ein = ", best_ein, best_cnt
     return best_w.flatten()
-
-def plot_line(w, xmin, xmax, N=1000):
-    assert w.shape == (3,)
-    xx = np.linspace(xmin, xmax, N)
-    yy = (-w[0] - w[1] * xx) / w[2]
-    plt.plot(xx, yy, color='green')
-
-def plot_square_line(w, xminmax, yminmax, N=1000):
-    wlen = len(w)
-    assert wlen == 3 or wlen == 6 or wlen == 10 or wlen == 15
-    w.resize((15,), refcheck=False)
-    max_pow = 4
-    scale = 0.3
-    dx, dy = scale * (xminmax[1] - xminmax[0]), scale * (yminmax[1] - yminmax[0])
-    xx = np.linspace(xminmax[0] - dx, xminmax[1] + dx, N)
-    yy = np.linspace(yminmax[0] - dy, yminmax[1] + dy, N)
-    X, Y = np.meshgrid(xx, yy)
-    Z = np.zeros(X.shape)
-    wi = 0
-    for k in range(max_pow + 1):
-        if wi >= wlen:
-            break
-        for i in range(k+1):
-            Z = Z + w[wi] * X**(i) * Y**(k-i)
-            wi += 1
-    # Z = w[0] + w[1] * X + w[2] * Y + w[3] * X**2 + w[4] * X * Y + w[5] * Y**2
-    # plt.xlim((-2,5))
-    plt.contour(X, Y, Z, [0])
-
-def plot_points(data, style=""):
-    plt.plot(data[:,0], data[:,1], style, markersize=10)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="run k-means clusterization with given arguments")

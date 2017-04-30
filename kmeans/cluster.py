@@ -3,13 +3,6 @@ from itertools import cycle
 import numpy as np
 import matplotlib.pyplot as plt
 
-def read_csv(filename, max_rows=None):
-    m = np.genfromtxt(filename, delimiter=',', dtype=float, skip_header=1, max_rows=max_rows)
-    return m
-
-def distance(p1, p2, axis=None):
-    return np.sqrt(np.sum((p1 - p2) ** 2, axis=axis))
-
 def print_cluster_distribution(result):
     clusters = len(set(result)) - (-1 in result)
     print clusters, ":"

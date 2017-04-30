@@ -1,7 +1,7 @@
 #!/bin/python
 import argparse
 import numpy as np
-from common import read_csv, plot_clusters, distance
+from cluster import read_csv, plot_clusters, distance
 
 def kmeans_chosen(data, centers):
     def best_cluster(p):

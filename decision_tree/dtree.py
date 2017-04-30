@@ -24,26 +24,6 @@ def threshold_results(feature, labels, filter=True):
         unique_feature = unique_feature[not_nan_indexes]
     return unique_feature, results
 
-def calculate_precision_recall(results, labels):
-    n = len(labels)
-    row_positives = np.sum(results, axis=-1)
-    if np.all(row_positives == 0):
-        return np.nan, 0, 0, 0
-    assert np.all(row_positives > 0)
-    def count_true_positives(row_result):
-        return np.sum(np.logical_and(row_result, labels))
-    true_positives = np.apply_along_axis(count_true_positives, -1, results).astype(dtype=np.float)
-    true_positives = true_positives
-    precision = true_positives / row_positives
-    assert np.sum(np.unique(labels) - np.array([0, 1])) == 0.0
-    total_positives = np.sum(labels)
-    assert total_positives > 0
-    recall = true_positives / total_positives
-    tpr = true_positives / total_positives
-    fpr = (row_positives - true_positives) / (n - total_positives)
-
-    return precision, recall, tpr, fpr
-
 def plot_pareto(precision, recall, graph_label="Pareto"):
     assert precision.shape == recall.shape
     assert precision.shape[0] == recall.shape[0]

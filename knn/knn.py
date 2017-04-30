@@ -4,11 +4,7 @@ from functools import partial
 from collections import Counter
 import argparse
 from sklearn.neighbors import KDTree
-
-
-def read_csv(filename):
-    m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
-    return m
+from common import read_csv, get_features, calc_distances_to_feature_vector
 
 
 def knn_filter_distance_by_number(distances, k):
@@ -18,15 +14,6 @@ def knn_filter_distance_by_number(distances, k):
 def knn_filter_distance_by_radius(distances, r):
     res = np.where(distances <= r)
     return res
-
-
-def calc_distances_to_feature_vector(features, row):
-    distances = np.sqrt(np.sum((features - row) ** 2, axis=1))
-    return distances
-
-
-def get_features(data):
-    return data[:, :-1]
 
 
 def precalc_data(data):
@@ -97,16 +84,6 @@ def knn(data, knn_filter, distances=None, kdtree=None):
     assert assumed_labels.shape == (nsamples,)
     b = np.not_equal(assumed_labels, answers)
     return float(sum(b)) / nsamples
-
-
-def normalize_data(data):
-    features = get_features(data)
-    max_features = np.max(features, axis=0)
-    nfeatures = data.shape[1] - 1
-    assert max_features.shape == (nfeatures,)
-    max_features[max_features == 0.0] = 1.0
-    features /= max_features
-    assert np.max(features) <= 1.0
 
 
 def main(argv, data=None, distances=None):

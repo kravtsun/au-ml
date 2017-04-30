@@ -1,0 +1,2 @@
+train:best accuracy error is  0.0880434782609 at threshold =  0.06
+test:best accuracy error is  0.0792616720955 at threshold =  0.33

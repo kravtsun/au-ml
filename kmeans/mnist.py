@@ -3,7 +3,7 @@ import sys
 import argparse
 import numpy as np
 from collections import Counter
-from common import read_csv, plot_clusters, distance, print_cluster_distribution
+from cluster import read_csv, plot_clusters, distance, print_cluster_distribution
 from sklearn.decomposition import PCA
 from kmeans import kmeans
 from affinity_propagation import affinity_propagation

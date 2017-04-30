@@ -1,7 +1,8 @@
 #!/bin/python
 import argparse
 import numpy as np
-from common import read_csv, plot_clusters, distance, print_cluster_distribution
+from cluster import plot_clusters, print_cluster_distribution
+from common import distance, read_csv
 
 def similarity(p1, p2):
     return -distance(p1, p2, axis=1)
