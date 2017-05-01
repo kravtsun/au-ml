@@ -2,14 +2,11 @@
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
-from common import plot_line, plot_points, plot_square_line, prepare_regression
+from common import plot_line, plot_points, plot_square_line, prepare_regression, accuracy
 
 def read_csv(filename):
     m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
     return m
-
-def accuracy(results, labels):
-    return float(np.sum(results == labels)) / len(labels)
 
 def pocket_pla(features, labels, iterations=10000, EPS=1e-5):
     n, nfeatures = features.shape

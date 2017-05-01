@@ -57,8 +57,8 @@ def plot_square_line(w, xminmax, yminmax, N=1000):
     # plt.xlim((-2,5))
     plt.contour(X, Y, Z, [0])
 
-def plot_points(data, style=""):
-    plt.plot(data[:,0], data[:,1], style, markersize=10)
+def plot_points(data, style="", **kwargs):
+    plt.plot(data[:,0], data[:,1], style, **kwargs)
 
 def prepare_regression(features, labels):
     sign_labels = labels.copy()
@@ -86,3 +86,6 @@ def calculate_precision_recall(results, labels):
     tpr = true_positives / total_positives
     fpr = (row_positives - true_positives) / (n - total_positives)
     return precision, recall, tpr, fpr
+
+def accuracy(results, labels):
+    return float(np.sum(results == labels)) / len(labels)

@@ -13,7 +13,7 @@ def work(features, labels, kernel, **kwargs):
     if kernel == "poly":
         kernel_name += "-" + "-".join(map(str, kwargs.values()))
     plt.figure(kernel_name)
-    clf = svm.SVC(kernel=kernel, C=1.0, gamma=0.5, shrinking=True, **kwargs)
+    clf = svm.SVC(kernel=kernel, **kwargs)
     # sign_labels = np.asarray(labels, dtype=int)
     # sign_labels[np.where(sign_labels) == 0.0] = -1.0
     clf.fit(features, labels)
@@ -39,13 +39,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     data = read_csv(args.data)
     features = get_features(data)
-    features = preprocessing.scale(features)
+    # features = preprocessing.scale(features)
+    # min_max_scaler = preprocessing.MinMaxScaler()
+    # features = min_max_scaler.fit_transform(features)
     labels = get_labels(data)
 
-    work(features, labels, "poly", degree=10)
     work(features, labels, "linear")
     work(features, labels, "rbf")
 
     for degree in range(2, 10+1):
         work(features, labels, "poly", degree=degree)
 
+    # work(features, labels, "poly", degree=2, coef0=0.5)
