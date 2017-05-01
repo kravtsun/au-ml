@@ -19,7 +19,7 @@ def load_data(path):
     assert os.path.exists(path)
     features = []
     classes = []
-    for root, dirs, files in os.walk(args.train):
+    for root, dirs, files in os.walk(path):
         for f in files:
             if f.endswith(PNG_EXTENSION):
                 label_letter = root.split("/")[-1]
@@ -35,7 +35,7 @@ def load_data(path):
                     pass
     return np.array(features), np.array(classes)
 
-def train_and_test(features, classes, test_features, test_classes, epochs=1000):
+def train_and_test(features, classes, test_features, test_classes, epochs, var):
     assert features.shape[0] == classes.shape[0]
     n = features.shape[0]
     def weight_variable(shape):
@@ -61,6 +61,16 @@ def train_and_test(features, classes, test_features, test_classes, epochs=1000):
         return features[ii], classes[ii]
 
     activation_func = tf.nn.relu
+
+    def convolution_layer3x3(x, k):
+        input_channels = int(x.shape[-1])
+        W_conv1 = weight_variable([3, 3, input_channels, k])
+        b_conv1 = bias_variable([k])
+        s_conv1 = conv2d(x_image, W_conv1) + b_conv1
+        x_conv1 = activation_func(s_conv1)
+        return x_conv1
+
+
     def dense_layer(x, k):
         # x should already be flat.
         # x_flat = tf.reshape(x, [-1, PNG_SIZE])
@@ -83,9 +93,17 @@ def train_and_test(features, classes, test_features, test_classes, epochs=1000):
 
     x = tf.placeholder(tf.float32, shape=[None, PNG_DIMENSION, PNG_DIMENSION])
     y_ = tf.placeholder(tf.float32, shape=[None, NCLASSES])
-    keep_prob = tf.placeholder(tf.float32)
-    
-    x_flat = tf.reshape(x, [-1, PNG_SIZE])
+    # keep_prob = tf.placeholder(tf.float32)
+
+    x_image = tf.reshape(x, [-1, PNG_DIMENSION, PNG_DIMENSION, 1])
+
+    if var > 0:
+        x_conv1 = convolution_layer3x3(x_image, 3)
+        conv_dim = 3
+    else:
+        x_conv1 = x_image
+        conv_dim = 1
+    x_flat = tf.reshape(x_conv1, [-1, PNG_SIZE * conv_dim])
     x_1 = dense_layer(x_flat, 4096)
     x_2 = dense_layer(x_1, 2048)
     x_3 = dense_layer(x_2, 1024)
@@ -100,19 +118,22 @@ def train_and_test(features, classes, test_features, test_classes, epochs=1000):
     sess.run(tf.global_variables_initializer())
     for i in range(epochs):
         batch = next_batch(100)
-        if i % 5 == 0:
-            train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1]})
+        if i % 10 == 0:
+            train_accuracy = accuracy.eval(feed_dict={x: features, y_: classes})
+            # test_accuracy = 0.0
             test_accuracy = accuracy.eval(feed_dict={x: test_features, y_: test_classes})
             print("%d,%g,%g" % (i, train_accuracy, test_accuracy))
-        train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+        train_step.run(feed_dict={x: batch[0], y_: batch[1]})
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Convolutional neural network.")
     parser.add_argument("--train", dest="train", required=True, help="Train path")
     parser.add_argument("--test", dest="test", required=True, help="Test path")
+    parser.add_argument("--epochs", dest="epochs", type=int, required=False, default=10000, help="Number of epochs")
+    parser.add_argument("--var", dest="var", type=int, default=0)
     # parser.add_argument("--validate", dest="validate", required=True, help="Validate path")
     args = parser.parse_args()
 
     features, classes = load_data(args.train)
     test_features, test_classes = load_data(args.test)
-    train_and_test(features, classes, test_features, test_classes)
+    train_and_test(features, classes, test_features, test_classes, epochs=args.epochs, var=args.var)
