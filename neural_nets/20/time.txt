@@ -1,0 +1,45 @@
+var=0 act=sigmoid
+
+real	2m51.656s
+user	1m57.796s
+sys	0m31.872s
+var=0 act=tanh
+
+real	2m54.384s
+user	1m58.688s
+sys	0m33.032s
+var=0 act=relu
+
+real	2m52.781s
+user	1m58.648s
+sys	0m32.068s
+var=1 act=sigmoid
+
+real	2m53.109s
+user	1m58.328s
+sys	0m32.604s
+var=1 act=tanh
+
+real	2m53.243s
+user	1m58.188s
+sys	0m32.716s
+var=1 act=relu
+
+real	2m54.453s
+user	2m0.348s
+sys	0m32.564s
+var=2 act=sigmoid
+
+real	2m53.246s
+user	1m58.844s
+sys	0m32.260s
+var=2 act=tanh
+
+real	2m52.961s
+user	1m58.008s
+sys	0m32.828s
+var=2 act=relu
+
+real	2m52.714s
+user	1m58.040s
+sys	0m32.544s
