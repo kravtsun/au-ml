@@ -2,10 +2,7 @@
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
-
-def read_csv(filename):
-    m = np.genfromtxt(filename, delimiter=',', dtype=np.double, skip_header=1)
-    return m
+from common import auc, read_csv
 
 def threshold_results(feature, labels, filter=True):
     assert len(feature.shape) == 1 or feature.shape[1] == 1
@@ -45,20 +42,6 @@ def plot_pareto(precision, recall, graph_label="Pareto"):
     plt.plot(pp[:, 0], pp[:,1], 'or')
     # plt.show()
 
-def plot_roc(fpr, tpr, **kwargs):
-    plt.figure("ROC")
-    t = np.linspace(0, 1.0, 100)
-    plt.plot(t, t, 'b')
-    asort = fpr.argsort()
-    plt.plot(fpr[asort], tpr[asort], 'og-', markersize=10)
-
-def auc(fpr, tpr):
-    n = len(fpr)
-    roc = np.hstack((fpr.reshape((n,1)), tpr.reshape(n,1)))
-    assert roc.shape == (fpr.shape[0], 2)
-    roc = roc[roc[:,0].argsort()]
-    return np.trapz(y=roc[:,1], x=roc[:,0])
-
 def accuracy(results, labels):
     return float(np.sum(results == labels)) / len(labels)
 
@@ -75,7 +58,6 @@ if __name__ == '__main__':
     def auc_value(k):
         unique_feature, results = threshold_results(feature=data[:, -1 - k], labels=labels)
         precision, recall, tpr, fpr = calculate_precision_recall(results, labels)
-        auc(fpr, tpr)
         # plot_pareto(precision, recall)
         # plot_roc(fpr, tpr)
         # plt.show()

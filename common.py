@@ -89,3 +89,17 @@ def calculate_precision_recall(results, labels):
 
 def accuracy(results, labels):
     return float(np.sum(results == labels)) / len(labels)
+
+def plot_roc(fpr, tpr, **kwargs):
+    plt.figure("ROC")
+    t = np.linspace(0, 1.0, 100)
+    plt.plot(t, t, 'b')
+    asort = fpr.argsort()
+    plt.plot(fpr[asort], tpr[asort], 'og-', markersize=10)
+
+def auc(fpr, tpr):
+    n = len(fpr)
+    roc = np.hstack((fpr.reshape((n,1)), tpr.reshape(n,1)))
+    assert roc.shape == (fpr.shape[0], 2)
+    roc = roc[roc[:,0].argsort()]
+    return np.trapz(y=roc[:,1], x=roc[:,0])
