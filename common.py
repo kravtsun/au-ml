@@ -90,8 +90,8 @@ def calculate_precision_recall(results, labels):
 def accuracy(results, labels):
     return float(np.sum(results == labels)) / len(labels)
 
-def plot_roc(fpr, tpr, **kwargs):
-    plt.figure("ROC")
+def plot_roc(fpr, tpr, figname = "ROC", **kwargs):
+    plt.figure(figname)
     t = np.linspace(0, 1.0, 100)
     plt.plot(t, t, 'b')
     asort = fpr.argsort()
