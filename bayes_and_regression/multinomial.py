@@ -82,7 +82,7 @@ if __name__ == '__main__':
     def all_work(filename, classifier):
         features, labels = load_features_labels(filename)
         probs = classifier.log_probas(features)
-        predicted = probs> 0.5
+        predicted = probs > 0.5
         print(accuracy(predicted, labels))
         return probs, labels
 

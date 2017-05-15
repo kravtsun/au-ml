@@ -103,3 +103,11 @@ def auc(fpr, tpr):
     assert roc.shape == (fpr.shape[0], 2)
     roc = roc[roc[:,0].argsort()]
     return np.trapz(y=roc[:,1], x=roc[:,0])
+
+def load_data(filename):
+    data = read_csv(filename)
+    n = data.shape[0]
+    # x = np.array(list([1, row[0]] for row in data))
+    x = data[:, :-1]
+    y = data[:, -1]
+    return x, y

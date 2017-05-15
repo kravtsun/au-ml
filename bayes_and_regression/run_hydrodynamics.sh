@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-{ echo alpha,poly,rscore; for a in $(LANG=en_US seq --format="%.2f" 0.00 1.00 100.0); do for p in `seq 1 2`; do echo "$a","$p",$(python regression.py --train ../data/hydrodynamics_train.csv --test ../data/hydrodynamics_test.csv --poly $p --alpha $a); done; done } > hydrodynamics_results.txt
+# { echo alpha,poly,rscore; for a in $(LANG=en_US seq --format="%f" 0.000 0.0001 0.01); do for p in `seq 1 2`; do echo "$a","$p",$(python regression.py --train ../data/hydrodynamics_train.csv --test ../data/hydrodynamics_test.csv --poly $p --alpha $a); done; done } > hydrodynamics_results.txt
+# { echo alpha,rscore; for a in $(LANG=en_US seq --format="%f" 0.000 0.0001 0.01); do echo "$a","$p",$(python lasso.py --train ../data/hydrodynamics_train.csv --test ../data/hydrodynamics_test.csv --alpha $a); done } > hydrodynamics_lasso_results.txt
+{ echo alpha,rscore; for a in $(LANG=en_US seq --format="%f" 0.000 0.0001 0.01); do echo "$a","$p",$(python elastic_net.py --train ../data/hydrodynamics_train.csv --test ../data/hydrodynamics_test.csv --alpha $a); done } > hydrodynamics_elastic_net_results.txt

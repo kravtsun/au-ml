@@ -8,7 +8,6 @@ from common import *
 
 
 class LinearRegressor():
-
     def __init__(self, poly, alpha=0):
         assert poly >= 1
         self.poly = poly
@@ -18,7 +17,7 @@ class LinearRegressor():
     def fit(self, X, y):
         assert X.shape[0] == y.shape[0]
         assert len(y.shape) == 1
-        X = self.prepare_data(X)
+        X = self.prepare_data(args.poly, X)
         n, nfeatures = X.shape
         tmp = X.T.dot(X) + self.alpha * np.eye(nfeatures, nfeatures)
         pinv = np.linalg.inv(tmp).dot(X.T)
@@ -28,17 +27,18 @@ class LinearRegressor():
         return self.w.shape[0]
 
     def predict(self, X):
-        X = self.prepare_data(X)
+        X = LinearRegressor.prepare_data(args.poly, X)
         assert X.shape[1] == self.nfeatures()
         w = self.w.reshape(self.nfeatures(), 1)
         return X.dot(w)
 
-    def prepare_data(self, X):
+    @staticmethod
+    def prepare_data(poly, X):
         if len(X.shape) == 1 or X.shape[1] == 1:
-            assert self.poly
-            return np.array(list([x ** p for p in range(self.poly + 1)] for x in X.flatten()))
+            assert poly
+            return np.array(list([x ** p for p in range(poly + 1)] for x in X.flatten()))
         else:
-            assert self.poly <= 2
+            assert poly <= 2
             n = X.shape[0]
             nfeatures = X.shape[1]
             def bit_ones(x):
@@ -46,7 +46,7 @@ class LinearRegressor():
                     return 0
                 return bit_ones(x / 2) + x % 2
 
-            if self.poly == 2:
+            if poly == 2:
                 for mask in range(1 << nfeatures):
                     p = bit_ones(mask)
                     if p != 2: continue
@@ -74,25 +74,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    def load_data(filename):
-        data = read_csv(filename)
-        n = data.shape[0]
-        # x = np.array(list([1, row[0]] for row in data))
-        x = data[:, :-1]
-        y = data[:, -1]
-        return x, y
+    def error(y_true, y_pred):
+        assert len(y_true.shape) == 1
+        # nfloat = float(len(y_true))
+        # return np.sum(np.abs(y_true - y_pred)) / nfloat
+        return ((y_true - y_pred) ** 2).sum()
 
-    def error(real, predicted):
-        assert len(real.shape) == 1
-        nfloat = float(len(real))
-        return np.sum(np.abs(real - predicted)) / nfloat
-
-    def rscore(real, predicted):
-        real = real.flatten()
-        predicted = predicted.flatten()
-        u = error(real, predicted)
-        ymean = np.mean(real)
-        v = error(real, ymean * np.ones(shape=real.shape))
+    def rscore(y_true, y_pred):
+        y_true = y_true.flatten()
+        y_pred = y_pred.flatten()
+        u = error(y_true, y_pred)
+        ymean = np.mean(y_true)
+        v = error(y_true, ymean * np.ones(shape=y_true.shape))
         return 1 - u / v
 
     # for poly in range(2, 10+1):
